@@ -4,6 +4,7 @@ import com.alpacaflow.meditrack.relatives.relatives.domain.exceptions.RelativeNo
 import com.alpacaflow.meditrack.relatives.relatives.domain.model.aggregates.Relative;
 import com.alpacaflow.meditrack.relatives.relatives.domain.model.commands.*;
 import com.alpacaflow.meditrack.relatives.relatives.domain.model.valueobjects.Email;
+import com.alpacaflow.meditrack.relatives.relatives.domain.model.valueobjects.RelationshipType;
 import com.alpacaflow.meditrack.relatives.relatives.domain.services.RelativeCommandService;
 import com.alpacaflow.meditrack.relatives.relatives.infrastructure.persistence.jpa.repositories.RelativeRepository;
 import org.springframework.stereotype.Service;
@@ -99,5 +100,35 @@ public class RelativeCommandServiceImpl implements RelativeCommandService {
         } catch (Exception e) {
             throw new IllegalArgumentException("Error unassigning relative from senior citizen: %s".formatted(e.getMessage()));
         }
+    }
+
+    @Override
+    public Long handle(RegisterRelativeCommand command) {
+        var relative = relativeRepository.findByUserId(command.userId())
+                .orElseGet(() -> createRelativeForRegistration(command));
+
+        if (command.seniorCitizenId() != null) {
+            if (!relative.isAssignedToSeniorCitizen(command.seniorCitizenId())) {
+                relative.assignToSeniorCitizen(command.seniorCitizenId());
+                relativeRepository.save(relative);
+            }
+        }
+
+        return relative.getId();
+    }
+
+    private Relative createRelativeForRegistration(RegisterRelativeCommand command) {
+        var email = new Email("relative-%d@meditrack.local".formatted(command.userId()));
+        var relative = new Relative(
+                command.firstName().trim(),
+                command.lastName().trim(),
+                email,
+                command.phone() == null || command.phone().isBlank() ? "N/A" : command.phone(),
+                RelationshipType.OTHER,
+                command.userId()
+        );
+        var saved = relativeRepository.save(relative);
+        saved.publishCreatedEvent();
+        return relativeRepository.save(saved);
     }
 }

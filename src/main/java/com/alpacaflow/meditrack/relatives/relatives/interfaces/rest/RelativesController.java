@@ -36,16 +36,24 @@ public class RelativesController {
     }
 
     @PostMapping
-    @Operation(summary = "Create a new relative", description = "Create a new relative")
+    @Operation(summary = "Create or register a relative", description = "Create a relative profile and optionally assign a senior citizen")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Relative created"),
             @ApiResponse(responseCode = "400", description = "Bad request")})
-    public ResponseEntity<RelativeResource> createRelative(@RequestBody CreateRelativeResource resource) {
-        var createRelativeCommand = CreateRelativeCommandFromResourceAssembler.toCommandFromResource(resource);
-        var relativeId = relativeCommandService.handle(createRelativeCommand);
-        if (relativeId == null) return ResponseEntity.badRequest().build();
-        var getRelativeByIdQuery = new GetRelativeByIdQuery(relativeId);
-        var relative = relativeQueryService.handle(getRelativeByIdQuery);
+    public ResponseEntity<RelativeResource> createRelative(@RequestBody RegisterRelativeResource resource) {
+        if (resource.userId() == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        var phone = resource.phone() == null || resource.phone().isBlank() ? "N/A" : resource.phone();
+        var registerCommand = new com.alpacaflow.meditrack.relatives.relatives.domain.model.commands.RegisterRelativeCommand(
+                resource.userId(),
+                resource.firstName(),
+                resource.lastName(),
+                phone,
+                resource.seniorCitizenId()
+        );
+        var relativeId = relativeCommandService.handle(registerCommand);
+        var relative = relativeQueryService.handle(new GetRelativeByIdQuery(relativeId));
         if (relative.isEmpty()) return ResponseEntity.notFound().build();
         var relativeResource = RelativeResourceFromEntityAssembler.toResourceFromEntity(relative.get());
         return new ResponseEntity<>(relativeResource, HttpStatus.CREATED);

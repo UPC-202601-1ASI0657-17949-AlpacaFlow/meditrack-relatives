@@ -11,4 +11,5 @@ public interface RelativeCommandService {
     void handle(DeleteRelativeCommand command);
     void handle(AssignRelativeToSeniorCitizenCommand command);
     void handle(UnassignRelativeFromSeniorCitizenCommand command);
+    Long handle(RegisterRelativeCommand command);
 }
