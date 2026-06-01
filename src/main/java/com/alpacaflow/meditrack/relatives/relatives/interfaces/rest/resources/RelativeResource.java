@@ -12,6 +12,7 @@ public record RelativeResource(
         String phone,
         RelationshipType relationshipType,
         Long userId,
+        Long seniorCitizenId,
         Date createdAt,
         Date updatedAt
 ) {}

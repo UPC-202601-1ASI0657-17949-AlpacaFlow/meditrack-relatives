@@ -5,6 +5,10 @@ import com.alpacaflow.meditrack.relatives.relatives.interfaces.rest.resources.Re
 
 public class RelativeResourceFromEntityAssembler {
     public static RelativeResource toResourceFromEntity(Relative entity) {
+        var seniorCitizenId = entity.getAssignments().stream()
+                .findFirst()
+                .map(a -> a.getSeniorCitizenId())
+                .orElse(null);
         return new RelativeResource(
                 entity.getId(),
                 entity.getFirstName(),
@@ -13,6 +17,7 @@ public class RelativeResourceFromEntityAssembler {
                 entity.getPhone(),
                 entity.getRelationshipType(),
                 entity.getUserId(),
+                seniorCitizenId,
                 entity.getCreatedAt(),
                 entity.getUpdatedAt()
         );
